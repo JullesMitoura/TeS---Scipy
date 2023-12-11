@@ -138,7 +138,7 @@ def GIBBS(data,Pmin,Pmax,Tmin,Tmax,eq,npressure,ntemp,inhibited_component=None):
                 init = previous_solution.x
             
             # Perform the optimization.
-            sol = minimize(gibbs, init, args=(T[j], P[i]), method='trust-constr', constraints=cons, options={'disp': False, 'maxiter': 100})
+            sol = minimize(gibbs, init, args=(T[j], P[i]),bounds= bnds, method='trust-constr', constraints=cons, options={'disp': False, 'maxiter': 100})
 
 
             result.append(sol.x)
