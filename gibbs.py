@@ -121,14 +121,8 @@ def GIBBS(data,Pmin,Pmax,Tmin,Tmax,eq,npressure,ntemp,inhibited_component=None):
     pressure = []
     temperature = []
 
-    init = [(low + high)*0.3 / 2 for low, high in bnds]
+    init = [(low + high)*0.5 / 2 for low, high in bnds]
     previous_solution = None
-
-    def positive_constraint(n):
-        return n - 1e-15
-    
-    cons.append({'type': 'ineq', 'fun': positive_constraint})
-
 
     for i in range(len(P)):
         for j in range(len(T)):
@@ -138,7 +132,7 @@ def GIBBS(data,Pmin,Pmax,Tmin,Tmax,eq,npressure,ntemp,inhibited_component=None):
                 init = previous_solution.x
             
             # Perform the optimization.
-            sol = minimize(gibbs, init, args=(T[j], P[i]),bounds= bnds, method='trust-constr', constraints=cons, options={'disp': False, 'maxiter': 100})
+            sol = minimize(gibbs, init, args=(T[j], P[i]),bounds= bnds, method='trust-constr', constraints=cons, options={'disp': False, 'maxiter': 50})
 
 
             result.append(sol.x)
