@@ -114,26 +114,17 @@ def GIBBS(data,Pmin,Pmax,Tmin,Tmax,eq,npressure,ntemp,inhibited_component=None):
 
 
     P = [round(P, 2) for P in np.linspace(Pmin, Pmax, npressure)]
-
     T = [round(T, 2) for T in np.linspace(Tmin, Tmax, ntemp)]
 
     result = []
     pressure = []
     temperature = []
 
-    init = [1]*len(Components)
-    previous_solution = None
+    init = [(low + high)*0.3 / 2 for low, high in bnds]
 
     for i in range(len(P)):
         for j in range(len(T)):
-            
-            # Use the result from the previous solution as the initial estimate, if it exists and if it converged.
-            if previous_solution and previous_solution.success:
-                init = previous_solution.x
-            
-            # Perform the optimization.
             sol = minimize(gibbs, init, args=(T[j], P[i]),bounds= bnds, method='trust-constr', constraints=cons, options={'disp': False, 'maxiter': 50})
-
 
             result.append(sol.x)
             pressure.append(P[i])
