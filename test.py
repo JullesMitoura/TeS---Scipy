@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import differential_evolution
 from EoS import fug
 
 def GIBBS(data,Pmin,Pmax,Tmin,Tmax,eq,npressure,ntemp,inhibited_component=None):
@@ -121,26 +121,34 @@ def GIBBS(data,Pmin,Pmax,Tmin,Tmax,eq,npressure,ntemp,inhibited_component=None):
     pressure = []
     temperature = []
 
-    init = [1]*len(Components)
+    init = [(low + high)*0.5 / 2 for low, high in bnds]
     previous_solution = None
 
-    for i in range(len(P)):
-        for j in range(len(T)):
-            
-            # Use the result from the previous solution as the initial estimate, if it exists and if it converged.
-            if previous_solution and previous_solution.success:
-                init = previous_solution.x
-            
-            # Perform the optimization.
-            sol = minimize(gibbs, init, args=(T[j], P[i]),bounds= bnds, method='trust-constr', constraints=cons, options={'disp': False, 'maxiter': 50})
+    def penalty_function(n, T, P, constraints):
+        gibbs_energy = gibbs(n, T, P)
+        penalty = 0
+        for constraint in constraints:
+            constraint_value = constraint['fun'](n, *constraint['args'])
+            penalty += np.sum(np.where(constraint_value > 0, constraint_value**2, 0))
+        return gibbs_energy + 1e6 * penalty
 
+    results_list = []  # Lista para armazenar os resultados de cada otimização
+    pressure = []
+    temperature = []
 
-            result.append(sol.x)
-            pressure.append(P[i])
-            temperature.append(T[j])
+    for p in P:
+        for t in T:
+            bounds = bnds
+            optimization_result = differential_evolution(penalty_function, bounds, args=(t, p, cons), strategy='best1bin', maxiter=100, popsize=50, tol=0.01, mutation=(0.5, 1), recombination=0.7)
 
-    results = pd.DataFrame(result, columns=df.index)
-    results['Temperature (K)'] = temperature
-    results['Pressure (bar)'] = pressure
+            results_list.append(optimization_result.x)  # Adicionando o resultado à lista
+            pressure.append(p)
+            temperature.append(t)
 
-    return results
+    results_df = pd.DataFrame(results_list, columns=df.index)  # Criando um DataFrame com os resultados
+    results_df['Temperature (K)'] = temperature
+    results_df['Pressure (bar)'] = pressure
+
+    return results_df
+
+print(GIBBS('Informations.csv',1,10,600,1200,'ideal',2,2,inhibited_component=None))
