@@ -3,12 +3,27 @@ import numpy as np
 from scipy.optimize import minimize
 from EoS import fug
 
-def GIBBS(data,Pmin,Pmax,Tmin,Tmax,eq,npressure,ntemp,inhibited_component=None):
-    df = pd.read_csv(data, index_col = 0).dropna()
+def GIBBS(data, Pmin, Pmax, Tmin, Tmax, eq, npressure, ntemp, inhibited_component=None):
+    df = pd.read_csv(data, index_col=0).dropna()
     species = df.columns[df.columns.get_loc("C"):]
     dic = df.to_dict(orient='index')
     Components = df.index.tolist()
 
+    def calculate_thermodynamic_terms(T, T0, component):
+        R = 8.314
+        delta_H_standard = component.get('∆Hf298', 0)
+        a = component.get('a', 0)
+        b = component.get('b', 0)
+        c = component.get('c', 0)
+        d = component.get('d', 0)
+
+        term_1 = (1/T0 - 1/T) * delta_H_standard
+        term_2 = R * (a * (np.log(T) - np.log(T0) + T0/T - 1))
+        term_3 = R * (b/2 * (-2*T0 + (T0**2)/T + T))
+        term_4 = R * (c/3 * ((T*T - T0*T0)/2 - (T0**3)*(-1/T + 1/T0)))
+        term_5 = R * d * ((-T0 + T)/(T0*T0*T) + 1/(2*T*T) - 1/(2*T0*T0))
+
+        return term_1 + term_2 + term_3 + term_4 + term_5
 
     def gibbs0(T, **components):
         R = 8.314  # J/mol·K
@@ -18,49 +33,40 @@ def GIBBS(data,Pmin,Pmax,Tmin,Tmax,eq,npressure,ntemp,inhibited_component=None):
 
         for component in components.values():
             delta_G_standard = component.get('∆Gf298', 0)
-            delta_H_standard = component.get('∆Hf298', 0)
-            a = component.get('a', 0)
-            b = component.get('b', 0)
-            c = component.get('c', 0)
-            d = component.get('d', 0)
-
-        
-            aux = (1/T0-1/T)*delta_H_standard+R*(a*(np.log(T)-np.log(T0)+T0/T-1)+(b/2)*(-2*T0+(T0**2)/T+T)+(c/3)*((T*T-T0*T0)/2-(T0**3)*(-1/T+1/T0))+d*((-T0+T)/(T0*T0*T)+1/(2*T*T)-1/(2*T0*T0)))
+            
+            aux = calculate_thermodynamic_terms(T, T0, component)
 
             # Calculating mu_i using the provided formula
-            mu_i = T*(delta_G_standard/T0-aux)
+            mu_i = T * (delta_G_standard / T0 - aux)
             
             results.append(mu_i)
 
         return results
 
     def contar_elementos(lista1, lista2, bib):
-        # Inicializando a matriz de resultados com zeros
         resultados = np.zeros((len(lista2), len(lista1)), dtype=int)
         
-        # Preenchendo a matriz com a contagem de elementos
         for i, mol in enumerate(lista2):
             for j, elem in enumerate(lista1):
                 resultados[i, j] = bib.get(mol, {}).get(elem, 0)
 
         return np.array(resultados)
+    
     A = contar_elementos(species.tolist(), Components, dic)
 
     def element_balance(n, n0, A):
-        
         res = np.matmul(n, A) - np.matmul(n0, A)
         return res
 
     n0 = df['initial'].tolist()
-    cons = [{'type': 'eq', 'fun': element_balance, 'args': [n0,A]}]
+    cons = [{'type': 'eq', 'fun': element_balance, 'args': [n0, A]}]
 
     for i in species.tolist():
-        locals()[i] = np.dot(n0,df[[i.replace('_max', '')]])
-
+        locals()[i] = np.dot(n0, df[[i.replace('_max', '')]])
 
     max_species = []
     for i in species:
-        max_species.append(np.dot(n0,df[i]))
+        max_species.append(np.dot(n0, df[i]))
 
     epsilon = 1e-05  # Valor muito pequeno para ajustar o limite superior se for zero
 
@@ -69,7 +75,6 @@ def GIBBS(data,Pmin,Pmax,Tmin,Tmax,eq,npressure,ntemp,inhibited_component=None):
         if comp == inhibited_component:
             bnds_aux.append((1e-15, epsilon))
         else:
-            # O código existente para calcular os limites
             a = np.multiply(([1/x if x != 0 else 0 for x in A[i]]), max_species)
             a_aux = [x for x in a if x > 0]
             
@@ -82,7 +87,6 @@ def GIBBS(data,Pmin,Pmax,Tmin,Tmax,eq,npressure,ntemp,inhibited_component=None):
                 bnds_aux.append((1e-15, epsilon))  # Ajuste para garantir que o limite superior seja sempre maior que o limite inferior
 
     bnds = tuple(bnds_aux)
-
 
     def gibbs(n, T, P):
         R = 8.314  # J/mol·K
@@ -111,17 +115,14 @@ def GIBBS(data,Pmin,Pmax,Tmin,Tmax,eq,npressure,ntemp,inhibited_component=None):
 
         return total_gibbs
 
-
-
     P = [round(P, 2) for P in np.linspace(Pmin, Pmax, npressure)]
-
     T = [round(T, 2) for T in np.linspace(Tmin, Tmax, ntemp)]
 
     result = []
     pressure = []
     temperature = []
 
-    init = [(low + high)*0.3 / 2 for low, high in bnds]
+    init = [(low + high) * 0.3 / 2 for low, high in bnds]
     previous_solution = None
 
     def positive_constraint(n):
@@ -129,17 +130,12 @@ def GIBBS(data,Pmin,Pmax,Tmin,Tmax,eq,npressure,ntemp,inhibited_component=None):
     
     cons.append({'type': 'ineq', 'fun': positive_constraint})
 
-
     for i in range(len(P)):
         for j in range(len(T)):
-            
-            # Use the result from the previous solution as the initial estimate, if it exists and if it converged.
             if previous_solution and previous_solution.success:
                 init = previous_solution.x
             
-            # Perform the optimization.
             sol = minimize(gibbs, init, args=(T[j], P[i]), method='trust-constr', constraints=cons, options={'disp': False, 'maxiter': 100})
-
 
             result.append(sol.x)
             pressure.append(P[i])

@@ -260,12 +260,11 @@ class LogoApp(QMainWindow):
         self.maxValuesTable = QTableWidget()
         self.maxValuesTable.setColumnCount(4)  # Quatro colunas: "Componente", "Valor máximo", "Temperatura (K)", "Pressão (bar)"
         self.maxValuesTable.setHorizontalHeaderLabels(["Componente", "Valor máximo", "Temperatura (K)", "Pressão (bar)"])
-        self.maxValuesTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)  # Ajustar o tamanho das colunas
+        self.maxValuesTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.maxValuesTable, 20, 0, 1, 6)
 
-        # Adicionando o botão para salvar os dados simulados
         self.saveDataButton = QPushButton('Salvar dados simulados', self)
-        layout.addWidget(self.saveDataButton, 21,0, 1, 6)  # Adicionando o botão na linha 18, ocupando 6 colunas
+        layout.addWidget(self.saveDataButton, 21,0, 1, 6)
         self.saveDataButton.clicked.connect(self.saveSimulatedData)
 
         self.component_selection_label.setEnabled(False)
@@ -286,13 +285,11 @@ class LogoApp(QMainWindow):
         self.temp_combobox.setEnabled(False)
 
     def importData(self):
-        # Abrir o diálogo de seleção de arquivo e permitir que o usuário escolha um arquivo CSV
         options = QFileDialog.Options()
         options |= QFileDialog.ReadOnly
         self.filePath, _ = QFileDialog.getOpenFileName(self, "Selecione um arquivo CSV", "", "CSV Files (*.csv);;All Files (*)", options=options)
         
         if self.filePath:
-            # Utilizar o Pandas para ler o arquivo CSV selecionado e selecionar as colunas "Component" e "Initial"
             data = pd.read_csv(self.filePath, usecols=["Component", "initial"])
             components = data["Component"].unique()
             self.component_combobox.clear()
@@ -301,7 +298,7 @@ class LogoApp(QMainWindow):
             for component in components:
                 self.components_combobox.addItem(component)
             
-            # Preencher a tabela com os dados
+
             self.tableWidget.setRowCount(len(data))
             for row_idx, row_data in data.iterrows():
                 item1 = QTableWidgetItem(row_data["Component"])
@@ -309,7 +306,6 @@ class LogoApp(QMainWindow):
                 self.tableWidget.setItem(row_idx, 0, item1)
                 self.tableWidget.setItem(row_idx, 1, item2)
 
-            # Preencher a combobox do botão "Inibir componente" com os valores da coluna "Component"
             components = data["Component"].unique()
             self.inhibit_combobox.clear()
             self.inhibit_combobox.addItem("Não inibir")
@@ -341,12 +337,12 @@ class LogoApp(QMainWindow):
         ntemp_text = self.nsimt_input.text().strip()
         npressure_text = self.nsimp_input.text().strip()
 
-        # Verificar se todos os campos necessários estão preenchidos
+
         if not Pmin_text or not Pmax_text or not Tmin_text or not Tmax_text or not ntemp_text or not npressure_text:
             QMessageBox.warning(self, "Atenção", "Revise as informações para seguir com a simulação!")
             return
     
-        # Obter os valores dos widgets
+
         Pmin = float(self.pmin_input.text())
         Pmax = float(self.pmax_input.text())
         Tmin = float(self.temp_min_input.text())
@@ -362,7 +358,7 @@ class LogoApp(QMainWindow):
 
         progress_dialog = QProgressDialog("Simulando...", None, 0, 0, self)
         progress_dialog.setAutoClose(True)
-        progress_dialog.setCancelButton(None)  # Sem botão de cancelar
+        progress_dialog.setCancelButton(None) 
         progress_dialog.show()
 
         QApplication.processEvents()
@@ -405,9 +401,8 @@ class LogoApp(QMainWindow):
 
     def plotResponseSurface(self):
         """Chama a função plot_superficie com os resultados de Gibbs se o número de simulações for adequado."""
-        # Assuming self.nsim_t and self.nsim_p are the numeric values for the number of simulations
         if int(self.nsimp_input.text().strip()) < 5 or int(self.nsimt_input.text().strip()) < 5:
-            # Mostrar a mensagem de erro para o usuário
+
             error_msg = QMessageBox()
             error_msg.setIcon(QMessageBox.Critical)
             error_msg.setText("Com a quantidade de pontos que você selecionou não é possível plotar uma superfície de resposta!")
@@ -420,7 +415,6 @@ class LogoApp(QMainWindow):
             z = self.gibbs_results[selected_component]
             plot_superficie(x, y, z, selected_component)
         else:
-            # Mostrar uma mensagem de erro caso a simulação ainda não tenha sido executada
             error_msg = QMessageBox()
             error_msg.setIcon(QMessageBox.Critical)
             error_msg.setText("Por favor, execute a simulação primeiro!")
@@ -433,7 +427,6 @@ class LogoApp(QMainWindow):
     
     def updateMaxValuesTable(self):
         if self.gibbs_results is not None:
-            # Remover as colunas 'Temperature (K)' e 'Pressure (bar)' dos componentes a serem considerados
             components = [col for col in self.gibbs_results.columns if col not in ['Temperature (K)', 'Pressure (bar)']]
             self.maxValuesTable.setRowCount(len(components))
             for idx, component in enumerate(components):
@@ -441,7 +434,6 @@ class LogoApp(QMainWindow):
                 temp_at_max = self.gibbs_results[self.gibbs_results[component] == max_value]['Temperature (K)'].values[0]
                 pressure_at_max = self.gibbs_results[self.gibbs_results[component] == max_value]['Pressure (bar)'].values[0]
                 
-                # Arredondar os valores para duas casas decimais
                 max_value_str = "{:.2f}".format(max_value)
                 temp_at_max_str = "{:.2f}".format(temp_at_max)
                 pressure_at_max_str = "{:.2f}".format(pressure_at_max)
@@ -457,7 +449,6 @@ class LogoApp(QMainWindow):
             options = QFileDialog.Options()
             filePath, _ = QFileDialog.getSaveFileName(self, "Salvar dados simulados", "", "CSV Files (*.csv);;All Files (*)", options=options)
             if filePath:
-                # Se o usuário não fornecer a extensão .csv, vamos adicioná-la
                 if not filePath.endswith('.csv'):
                     filePath += '.csv'
                 self.gibbs_results.to_csv(filePath, index=False)
@@ -468,7 +459,6 @@ class LogoApp(QMainWindow):
     def plotCorrelationMatrix(self):
 
         if int(self.nsimp_input.text().strip()) < 5 or int(self.nsimt_input.text().strip()) < 5:
-            # Mostrar a mensagem de erro para o usuário
             error_msg = QMessageBox()
             error_msg.setIcon(QMessageBox.Critical)
             error_msg.setText("Simule mais pontos para verificar as correlações!")
@@ -519,7 +509,6 @@ class LogoApp(QMainWindow):
 def main():
     app = QApplication(sys.argv)
 
-    # Define a fonte global para toda a aplicação
     font = QFont()
     font.setPointSize(10)
     app.setFont(font)
