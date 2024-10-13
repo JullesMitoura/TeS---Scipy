@@ -40,6 +40,7 @@ from data_P import plot_data_temperature, plot_data_pressure
 import os
 import sys
 import subprocess
+import platform
 
 
 class LogoApp(QMainWindow):
@@ -321,7 +322,12 @@ class LogoApp(QMainWindow):
     def showReadmeDialog(self):
         filename = "TeS.pdf"
         if os.path.isfile(filename):
-            os.startfile(filename)
+            if platform.system() == "Windows":
+                os.startfile(filename)
+            elif platform.system() == "Darwin":  # macOS
+                subprocess.call(["open", filename])
+            else:  # Linux
+                subprocess.call(["xdg-open", filename])
         else:
             print(f"O arquivo {filename} não foi encontrado.")
 
