@@ -260,9 +260,10 @@ class LogoApp(QMainWindow):
         self.maxValuesTable = QTableWidget()
         self.maxValuesTable.setColumnCount(4)  # Quatro colunas: "Componente", "Valor máximo", "Temperatura (K)", "Pressão (bar)"
         self.maxValuesTable.setHorizontalHeaderLabels(["Componente", "Valor máximo", "Temperatura (K)", "Pressão (bar)"])
-        self.maxValuesTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.maxValuesTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)  # Ajustar o tamanho das colunas
         layout.addWidget(self.maxValuesTable, 20, 0, 1, 6)
 
+        # Adicionando o botão para salvar os dados simulados
         self.saveDataButton = QPushButton('Salvar dados simulados', self)
         layout.addWidget(self.saveDataButton, 21,0, 1, 6)
         self.saveDataButton.clicked.connect(self.saveSimulatedData)
