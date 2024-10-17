@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.optimize import minimize
-from EoS import fug
+from app.EoS import fug
 
 # Constantes globais
 R = 8.314  # J/mol·K

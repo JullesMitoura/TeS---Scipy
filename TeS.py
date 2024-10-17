@@ -26,17 +26,17 @@ import sys
 import pandas as pd
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QPushButton, QGridLayout, QFrame, QTextEdit, QDialog, QTableWidget, QTableWidgetItem, QFileDialog, QVBoxLayout, QComboBox, QHeaderView
 from PyQt5.QtGui import QPixmap, QPalette, QColor, QFont
-from custom_widgets import CheckableComboBox
+from app.custom_widgets import CheckableComboBox
 from PyQt5.QtWidgets import QProgressDialog
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtCore import Qt
 from PyQt5 import QtGui
-from gibbs import GIBBS
-from surface import plot_superficie
-from linear_graph import line_graf, line_graf_T
-from correlation import plot_correlation_matrix
-from data_P import plot_data_temperature, plot_data_pressure
+from app.gibbs import GIBBS
+from app.surface import plot_superficie
+from app.linear_graph import line_graf, line_graf_T
+from app.correlation import plot_correlation_matrix
+from app.data_P import plot_data_temperature, plot_data_pressure
 import os
 import sys
 import subprocess

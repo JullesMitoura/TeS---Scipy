@@ -29,4 +29,3 @@ class CheckableComboBox(QComboBox):
             if item.checkState() == Qt.Checked:
                 checkedItems.append(item.text())
         return checkedItems
-
